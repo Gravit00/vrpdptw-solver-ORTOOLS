@@ -36,7 +36,7 @@ pip install ortools matplotlib numpy
 ## Usage
 
 Run all cells in order in Jupyter Notebook.  
-Make sure `lc101.txt` and `VRPDPTW.ipynb` are in the same directory.
+Make sure `lc101.txt` and `VRPDPTW.py` are in the same directory.
 
 ## Results
 
