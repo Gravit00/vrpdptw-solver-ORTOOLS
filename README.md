@@ -69,3 +69,16 @@ The distance gap is due to integer truncation in the distance matrix. All 10 rou
 2. **Nodes have types**: In VRPTW all customer nodes are equivalent. In VRPDPTW, nodes are either pickup (positive demand) or delivery (negative demand). OR-Tools accumulates demand along the route, so the sign difference correctly models loading and unloading.
 
 3. **PD constraint depends on time dimension**: The precedence constraint (`CumulVar(pickup) <= CumulVar(delivery)`) requires the time dimension to already exist. This means `add_time_window_constraint` must explicitly return `time_dimension` so the PD function can use it — unlike in VRPTW where the time window function had no return value.
+
+
+## Comparison: Nearest Neighbor Heuristic vs OR-Tools
+
+Nearest Neighbor is a greedy baseline: starting from the depot, it repeatedly visits the nearest feasible pickup, then unlocks the paired delivery for the same vehicle. OR-Tools uses Guided Local Search to optimize all constraints simultaneously.
+
+| | Nearest Neighbor | OR-Tools (GLS) |
+|---|---|---|
+| Vehicles Used | 16 | 10 |
+| Total Distance | 1225 | 809 |
+| Gap | — | −38% vehicles, −34% distance |
+
+![comparison](comparison.png)
