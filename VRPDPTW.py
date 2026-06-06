@@ -342,3 +342,86 @@ def visualize_routes(nodes, routes, pickups_deliveries):
 # ---- Run ----
 if routes:
     visualize_routes(nodes, routes, pickups_deliveries)
+
+
+# STEP 9: Nearest Neighbor Heuristic 
+
+def nearest_neighbor_vrpdptw(nodes, dist_matrix, capacity, pickups_deliveries):
+    """
+    Greedy Nearest Neighbor heuristic for VRPDPTW.
+    
+    Rules:
+    - Only visit a pickup before its paired delivery
+    - Same vehicle must serve both pickup and delivery
+    - Respect time windows and capacity
+    """
+    # Build a lookup: pickup_id -> delivery_id
+    pair_map = {p: d for p, d in pickups_deliveries}
+    
+    unvisited_pickups = set(p for p, d in pickups_deliveries)
+    unvisited_deliveries = set()  # deliveries become available after pickup is done
+    
+    routes = []
+    total_distance = 0.0
+
+    while unvisited_pickups or unvisited_deliveries:
+        # Dispatch a new vehicle
+        route = [0]
+        current = 0
+        current_time = 0.0
+        current_load = 0
+        route_distance = 0.0
+        pending_deliveries = set()  # deliveries this vehicle must complete
+
+        while True:
+            best = None
+            best_dist = float('inf')
+
+            # Candidates: available pickups + pending deliveries for this vehicle
+            candidates = unvisited_pickups | pending_deliveries
+
+            for j in candidates:
+                node = nodes[j]
+                d = dist_matrix[current][j]
+                arrival = max(current_time + d, node['ready_time'])
+
+                # Check time window and capacity
+                if arrival <= node['due_date'] and current_load + node['demand'] <= capacity:
+                    if d < best_dist:
+                        best_dist = d
+                        best = j
+
+            if best is None:
+                break
+
+            # Visit the chosen node
+            node = nodes[best]
+            route_distance += dist_matrix[current][best]
+            current_time = max(current_time + dist_matrix[current][best], node['ready_time'])
+            current_time += node['service_time']
+            current_load += node['demand']
+            route.append(best)
+
+            if best in unvisited_pickups:
+                # Pickup visited: unlock its delivery for this vehicle
+                unvisited_pickups.remove(best)
+                pending_deliveries.add(pair_map[best])
+            else:
+                # Delivery visited
+                pending_deliveries.remove(best)
+
+            current = best
+
+        # Return to depot
+        route_distance += dist_matrix[current][0]
+        route.append(0)
+        routes.append(route)
+        total_distance += route_distance
+
+    print(f"[Nearest Neighbor] Vehicles used: {len(routes)}")
+    print(f"[Nearest Neighbor] Total distance: {total_distance:.2f}")
+    return routes, total_distance
+
+
+# Run
+nn_routes, nn_distance = nearest_neighbor_vrpdptw(nodes, dist_matrix, capacity, pickups_deliveries)
